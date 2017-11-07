@@ -1,0 +1,28 @@
+########################### 溢出中断处理 ###########################
+########################### 打印错误信息
+
+ERROR			equ		(4248)
+print_string	equ		(672)
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -6
+	sw $a0, 0($sp)
+	sw $ra, 2($sp)
+	sw $a1, 4($sp)
+
+puts_error_info:
+	addi $a0, $zero, ERROR
+	addi $a1, $zero, 64
+	jal print_string
+
+Exit:
+	lw $a0, 0($sp)
+	lw $ra, 2($sp)
+	lw $a1, 4($sp)
+	addi $sp, $sp, 6
+
+	jr $ra
+.end Start

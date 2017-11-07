@@ -1,0 +1,45 @@
+########################### 通过串口获取扇区 ###########################
+########################### $a0 查询扇区数，低16位有效
+########################### $a1 缓冲区地址
+
+seri_send 	equ	 	(768)
+seri_recv 	equ		(800)
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -8
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+	sw $ra, 6($sp)
+
+	add $t0, $a0, $zero
+	add $t1, $a1, $zero
+
+parityfail:
+	addi $a0, $zero, 07h 	#发送查询磁盘命令
+	jal seri_send
+
+	srl $t2, $t0, 8
+	andi $a0, $t2, 0ffh 	#发送高8位
+	jal seri_send
+
+	andi $a0, $t0, 0ffh 	#发送低8位
+	jal seri_send
+
+	add $a0, $zero, $t1		#接收t1扇区
+	addi $a1, $zero, 512
+	jal seri_recv
+
+	bne $v0, $zero, parityfail 	#奇偶检验错，重发
+
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	lw $ra, 6($sp)
+	addi $sp, $sp, 8
+
+	jr $ra
+.end Start

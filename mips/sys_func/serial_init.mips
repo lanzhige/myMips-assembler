@@ -1,0 +1,50 @@
+########################### 串口初始化 ###########################
+########################### $a0 低8位 LCR
+########################### $a1 低16位 DH
+
+serialAddrH		equ		(3)		#串口输出地址高位
+serialRegH		equ		(256)	#串口寄存器第9根线高
+serialAddrLCR	equ		(2)		#4'b0010 = LCR
+serialAddrDLH	equ		(4)		#4'b0100 = DLH
+serialAddrDLL	equ		(5)		#4'b0101 = DLL
+serialAddrSIG	equ		(6)		#4'b0110 = SIG
+serialAddrREP	equ		(7)		#4'b0111 = REP
+serialAddrALP	equ		(9)		#4'b1001 = ALP
+memAddr			equ		(4226)
+transfering		equ 	(4228)
+baddata			equ 	(4230)
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+
+	xor $t0, $t0, $t0
+	lui $t0, serialAddrH
+	addi $t0, $t0, serialRegH	#串口寄存器基址
+
+	sw $a0, serialAddrLCR($t0)	#设置控制
+	sw $a1, serialAddrDLL($t0)
+	srl $t1, $a1, 8
+	sw $t1, serialAddrDLH($t0)	#设置波特率除数
+
+	sw $zero, serialAddrREP($t0)	#设置读指针，基本为0
+	sw $zero, serialAddrSIG($t0)	#设置信号为低
+
+	addi $t1, $zero, 200
+	sw $t1, serialAddrALP($t0)		#设置中断指针，尽量靠后，防止意外触发
+
+	sw $zero, memAddr($zero)		#设置内存中标志位
+	sw $zero, transfering($zero)
+	sw $zero, baddata($zero)
+
+Exit:
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	addi $sp, $sp, 4
+
+	jr $ra
+.end Start

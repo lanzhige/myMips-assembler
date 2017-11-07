@@ -1,0 +1,64 @@
+########################### read_int ###########################
+########################### $v0 读到的数字
+########################### $v1 1正确读到数字 0错误
+########################### 十六进制形式，小写
+
+read_string 	equ		(704)
+BUF				equ 	(4232)
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -16
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+	sw $t3, 6($sp)
+	sw $t4, 8($sp)
+	sw $a0, 10($sp)
+	sw $a1, 12($sp)
+	sw $ra, 14($sp)
+
+	addi $a0, $zero, BUF
+	addi $a1, $zero, 8
+	jal read_string 		#读入字符串
+
+	addu $t4, $zero, $zero	#t4读到的数字
+	addi $t2, $zero, 0fbh	#结束符
+	addi $t0, $zero, BUF	#指针
+
+next:
+	lh $t1, 0($t0)			#读取i字符
+	beq $t2, $t1, done		#结束
+
+	slti $t3, $t1, 16		#是否为0-9a-f
+	beq $t3, $zero, notanumber
+
+	sll $t4, $t4, 4			#将结果加到t4
+	addu $t4, $t4, $t1
+	addi $t0, $t0, 1 		#指针后移
+	beq $zero, $zero, next
+
+notanumber:
+	addu $v1, $zero, $zero 	#返回错误信息
+	b Exit
+
+done:
+	addi $v1, $zero, 1 		#返回正确信息
+
+Exit:
+	addu $v0, $zero, $t4
+
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	lw $t3, 6($sp)
+	lw $t4, 8($sp)
+	lw $a0, 10($sp)
+	lw $a1, 12($sp)
+	lw $ra, 14($sp)
+	addi $sp, $sp, 16
+
+	jr $ra
+.end Start

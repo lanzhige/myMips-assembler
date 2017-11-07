@@ -1,0 +1,44 @@
+########################### readchar ###########################
+########################### $v0 返回字符，低8位有效
+########################### $v1 是否读到了字符，1有效
+
+CSTART		equ		(4098)
+ReadPos		equ		(4098+0)
+WritePos	equ		(4098+2)
+Data 		equ		(4098+10)
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -6
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+
+	lw $t0, ReadPos($zero)
+	lw $t1, WritePos($zero)
+	addu $t2, $zero, 0fbh
+	addu $v1, $zero, $zero	#未接受字符，v1 = 0，v0 = t2 = fb
+	beq $t0, $t1, Exit		#是否存在字符，没有则返回fb无字符
+
+	addi $v1, $zero, 1 		#接收到字符，v1 = 1
+	lhu $t2, Data($t0)
+
+UpdataReadPo:				#更新读指针
+	addi $t0, $t0, 1
+	slti $t1, $t0, 100	#buffer max length = 100
+	bne $t1, $zero, 1
+	xor $t0, $t0, $t0
+	sw $t0, ReadPos($zero)
+
+Exit:
+	addu $v0, $t2, $zero
+
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	addi $sp, $sp, 6
+
+	jr $ra
+.end Start

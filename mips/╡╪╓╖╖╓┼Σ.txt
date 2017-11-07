@@ -1,0 +1,89 @@
+0
+	intr_handler = 0
+0 + 32
+	syscall_intr = 32
+32 + 128
+	overflow_intr = 160
+160 + 32
+	keyboard_intr = 192
+192 + 320
+	timer_intr = 512
+512 + 32
+	serial_intr = 544
+544 + 64
+	scroll_up = 608
+608 + 32
+	clrsrc = 640
+640 + 32
+	print_string = 672
+672 + 32
+	read_string = 704
+704 + 64
+	serial_send = 768
+768 + 32
+	serial_recv = 800
+800 + 32
+	serial_init = 832
+832 + 32
+	putchar = 864
+864 + 96
+	readchar = 960
+960 + 32
+	putcharAT = 992
+992 + 64
+	cursor_set = 1056
+1056 + 32
+	cursor_blink = 1088
+1088 + 64
+	print_int = 1152
+1152 + 64
+	read_int = 1216
+1216 + 64
+	read_file = 1280
+1280 + 96
+	file_init = 1376
+1376 + 192
+	div = 1568
+1568 + 32
+	str_cmp = 1600
+1600 + 32
+	save_src = 1632
+1632 + 32
+	recover_src = 1664
+1664 + 32
+	str_cpy = 1696
+1696 + 32
+	dir = 1728
+1728 + 64
+	get_sector = 1792
+1792 + 32
+
+
+预留到2048*2 = 4096
+	Cursor = 4096 + 2
+	CSTART = 4098 + 128
+	memAddr = 4226 + 2
+	transfering = 4228 + 2
+	baddata = 4230 + 2
+	BUF = 4232 + 16 #字符串缓冲地址
+	ERROR = 4248 + 64
+	State = 4312 + 2
+	blinkCounter = 4314 + 2
+	dirpos = 4316 + 768
+	fatpos = 5084 + 384
+	datasec = 5468 + 4
+	wrong = 5472 + 64
+	dirsec = 5536 + 4
+	buffer = 5540 + 384
+	fatsec = 5924 + 4
+	intrPerBlink = 5928 + 2		#初始值500
+
+保留到3072*2
+	系统代码
+
+内存布局
+0x00000 - 0x0ffff 	内存
+0x10000 - 0x10258	显存
+0x2XXXX				键盘
+0x30000 - 0x30110	串口
+0x40000 - 0x40100	ROMBIOS

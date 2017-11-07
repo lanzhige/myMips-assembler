@@ -1,0 +1,44 @@
+########################### save_src ###########################
+########################### $a0 保存到的地址
+########################### 保存屏幕
+
+Cursor		equ 	(4096)
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -8
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+	sw $t3, 6($sp)
+
+	add $t0, $a0, $zero
+	xor $t1, $t1, $t1
+	xor $t2, $t2, $t2
+	lui $t1, 1
+	lui $t2, 1
+	addi $t2, $t2, 600
+
+loop:					#保存屏幕
+	beq $t1, $t2, done
+	lw $t3, 0($t1)
+	sw $t3, 0($t0)
+	addi $t1, $t1, 2
+	addi $t0, $t0, 2
+	b loop
+
+done:
+	lw $t3, Cursor($zero)	#保存光标位置
+	sw $t3, 0($t0)
+
+Exit:
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	lw $t3, 6($sp)
+	addi $sp, $sp, 8
+
+	jr $ra
+.end Start

@@ -1,0 +1,67 @@
+########################### print_int ###########################
+########################### $a0 输出的数字
+########################### $a1 前导零对齐到第几位，上限8
+########################### 十六进制形式
+
+BUF				equ 	(4232)
+print_string	equ		(672)
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -10
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+	sw $t3, 6($sp)
+	sw $ra, 8($sp)
+
+	addi $t0, $zero, 8		#t0 指针
+	addi $t1, $zero, 0fbh 	#t1 结束符
+	sh $t1, BUF($t0)		#字符串尾结束符
+
+	addu $t2, $a0, $zero 	#数字
+	addu $t1, $zero, $zero 	#总位数
+
+loop:
+	beq $t0, $zero, done	#8位填完
+	addi $t0, $t0, -1
+
+	beq $t2, $zero, iszero	#数字已经输完
+	addi $t1, $t1, 1
+
+iszero:
+	andi $t3, $t2, 0fh
+	sh $t3, BUF($t0)		#填入字符串
+	srl $t2, $t2, 4
+	beq $zero, $zero, loop
+
+done:
+	bne $t1, $zero, atleastone
+	addi $t1, $t1, 1		#输出至少为1位，0的情况
+
+atleastone:
+	slt $t2, $t1, $a1
+	beq $zero, $t2, reassign
+	slti $t2, $a1, 9
+	beq $zero, $t2, reassign
+	addu $t1, $zero, $a1	#判断前导零的最少个数
+
+reassign:
+	negu $t2, $t1
+	addi $t2, $t2, 8
+	addi $a0, $t2, BUF		#字符串地址
+	addu $a1, $zero, $t1	#最大长度
+	jal print_string
+
+Exit:
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	lw $t3, 6($sp)
+	lw $ra, 8($sp)
+	addi $sp, $sp, 10
+
+	jr $ra
+.end Start

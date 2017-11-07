@@ -1,0 +1,311 @@
+####################################################################
+########################### 键盘中断处理 ###########################
+####################################################################
+
+CSTART		equ		(4098)
+ReadPos		equ		(4098+0)
+WritePos	equ		(4098+2)
+CapFlag		equ		(4098+4)
+ShiftFlag	equ		(4098+6)
+Record		equ		(4098+8)
+DataHead	equ		(4098+10)
+BufAddrh	equ		(2)		#键盘缓冲区高位
+BufAddrl	equ		(0)		#键盘缓冲区低位
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -14
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+	sw $s0, 6($sp)
+	sw $s1, 8($sp)
+	sw $s2, 10($sp)
+	sw $s3, 12($sp)
+
+	xor $t1, $t1, $t1
+	lui $t1, BufAddrh
+	addi $t1, $t1, BufAddrl	#键盘缓冲区地址
+	lw $t0, 0($t1)			#t0扫描码
+	andi $t0, $t0, 0ffh
+
+	lw $s0, WritePos($zero)
+	lw $s1, ShiftFlag($zero)
+	lw $s2, CapFlag($zero)
+	lw $s3, Record($zero)
+
+	addi $t1, $zero, 012h	#lshift
+	beq $t0, $t1, IsShift
+	addi $t1, $zero, 059h	#rshift
+	beq $t0, $t1, IsShift
+	addi $t1, $zero, 058h	#caps
+	beq $t0, $t1, IsCap
+
+	addi $t1, $zero, 045h 	#0
+	addi $t2, $zero, 000h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 016h 	#1
+	addi $t2, $zero, 001h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 01Eh 	#2
+	addi $t2, $zero, 002h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 026h	#3
+	addi $t2, $zero, 003h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 025h	#4
+	addi $t2, $zero, 004h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 02Eh	#5
+	addi $t2, $zero, 005h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 036h	#6
+	addi $t2, $zero, 006h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 03Dh	#7
+	addi $t2, $zero, 007h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 03Eh	#8
+	addi $t2, $zero, 008h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 046h	#9
+	addi $t2, $zero, 009h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 01ch	#a
+	addi $t2, $zero, 00ah
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 032h 	#b
+	addi $t2, $zero, 00bh
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 021h 	#c
+	addi $t2, $zero, 00ch
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 023h 	#d
+	addi $t2, $zero, 00dh
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 024h 	#e
+	addi $t2, $zero, 00eh
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 02bh 	#f
+	addi $t2, $zero, 00fh
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 034h 	#g
+	addi $t2, $zero, 010h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 033h 	#h
+	addi $t2, $zero, 011h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 043h 	#i
+	addi $t2, $zero, 012h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 03bh 	#j
+	addi $t2, $zero, 013h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 042h 	#k
+	addi $t2, $zero, 014h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 04bh 	#l
+	addi $t2, $zero, 015h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 03Ah 	#m
+	addi $t2, $zero, 016h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 031h 	#n
+	addi $t2, $zero, 017h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 044h 	#o
+	addi $t2, $zero, 018h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 04dh 	#p
+	addi $t2, $zero, 019h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 015h 	#q
+	addi $t2, $zero, 01ah
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 02dh 	#r
+	addi $t2, $zero, 01bh
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 01bh 	#s
+	addi $t2, $zero, 01ch
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 02ch 	#t
+	addi $t2, $zero, 01dh
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 03ch 	#u
+	addi $t2, $zero, 01eh
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 02ah 	#v
+	addi $t2, $zero, 01fh
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 01dh 	#w
+	addi $t2, $zero, 020h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 022h 	#x
+	addi $t2, $zero, 021h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 035h 	#y
+	addi $t2, $zero, 022h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 01Ah 	#z
+	addi $t2, $zero, 023h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 00eh	#'`'
+	addi $t2, $zero, 024h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 04eh	#'-'
+	addi $t2, $zero, 025h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 055h	#'='
+	addi $t2, $zero, 026h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 054h	#'['
+	addi $t2, $zero, 027h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 05bh	#']'
+	addi $t2, $zero, 028h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 05dh	#'\'
+	addi $t2, $zero, 029h
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 04ch	#';'
+	addi $t2, $zero, 02ah
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 052h	#'''
+	addi $t2, $zero, 02bh
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 041h	#','
+	addi $t2, $zero, 02ch
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 049h	#'.'
+	addi $t2, $zero, 02dh
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 04ah	#'/'
+	addi $t2, $zero, 02eh
+	beq $t0, $t1, Captrue
+
+	addi $t1, $zero, 029h	#space
+	addi $t2, $zero, 0ffh
+	beq $t0, $t1, write
+
+	addi $t1, $zero, 05ah	#enter
+	addi $t2, $zero, 0feh
+	beq $t0, $t1, write
+
+	addi $t1, $zero, 066h	#backspace
+	addi $t2, $zero, 0fdh
+	beq $t0, $t1, write
+
+	b Exit					#其他字符，直接走
+
+IsShift:					#shift位取反，Record置0
+	xori $t0, $s1, 1
+	sw $t0, ShiftFlag($zero)
+	sw $zero, Record($zero)
+	beq $zero, $zero, Exit
+
+IsCap:						#Caps取反
+	xori $t0, $s2, 1
+	sw $t0, CapFlag($zero)
+	beq $zero, $zero, Exit
+
+Captrue:
+	bne $s1, $zero, ShiftMode	#保证shift的时候不用判断0-9a-z + 47
+	beq $s2, $zero, write
+	addi $t2, $t2, 47
+
+write:
+	bne $s1, $zero, ShiftMode
+	lui $s0, 1
+	sh $t2, DataHead($s0)			#no shift
+	lui $s0, 0
+	beq $zero, $zero, UpdataWritePo
+
+ShiftMode:
+	slti $t1, $t2, 16		#只接受0-9a-z
+	beq $t1, $zero, Exit
+	bne $s3, $zero, Second
+	sll $t2, $t2, 4
+	lui $s0, 1
+	sh $t2, DataHead($s0)  		#写进缓冲区
+	lui $s0, 0
+	addi $t1, $zero, 1
+	sw $t1, Record($zero)	#写record
+	beq $zero, $zero, Exit
+
+Second:
+	lui $s0, 1
+	lhu $t1, DataHead($s0)
+	lui $s0, 0
+	or $t2, $t2, $t1
+	lui $s0, 1
+	sh $t2, DataHead($s0)  		#写进缓冲区
+	lui $s0, 0
+	sw $zero, Record($zero) #写record
+
+UpdataWritePo:
+	addi $s0, $s0, 1
+	slti $t0, $s0, 100	#buffer max length = 100
+	bne $t0, $zero, 1
+	add $s0, $zero, $zero
+	sw $s0, WritePos($zero)
+
+Exit:
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	lw $s0, 6($sp)
+	lw $s1, 8($sp)
+	lw $s2, 10($sp)
+	lw $s3, 12($sp)
+	addi $sp, $sp, 14
+
+	jr $ra
+.end Start

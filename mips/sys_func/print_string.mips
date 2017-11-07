@@ -1,0 +1,45 @@
+########################### print_string ###########################
+########################### $a0 输出字符串头地址，0xfb结束符
+########################### $a1 最长长度
+########################### $v0 实际输出长度
+
+putchar		equ		(864)
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -10
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+	sw $t3, 6($sp)
+	sw $ra, 8($sp)
+
+	xor $t0, $t0, $t0		#计数器
+	addu $t1, $zero, $a0	#指针
+	addi $t2, $zero, 0fbh	#结束符
+
+loop:
+	beq $t0, $a1, Exit		#计数器满
+	lhu $t3, 0($t1)
+	beq $t3, $t2, Exit		#遇结束符
+
+	addu $a0, $t3, $zero 	#a0已经保存在t1，直接使用
+	jal putchar 			#打印字符
+	addi $t0, $t0, 1		#计数器加1
+	addi $t1, $t1, 1 		#指针加1
+	beq $zero, $zero, loop
+
+Exit:
+	addu $v0, $zero, $t0
+
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	lw $t3, 6($sp)
+	lw $ra, 8($sp)
+	addi $sp, $sp, 10
+
+	jr $ra
+.end Start

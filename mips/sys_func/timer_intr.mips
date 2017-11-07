@@ -1,0 +1,35 @@
+########################### 时钟中断处理 ###########################
+########################### 光标闪烁
+
+blinkCounter	equ		(4314)
+intrPerBlink	equ		(5928)		#1ms时钟中断，500ms闪烁
+cursorBlink		equ		(1088)
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -6
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $ra, 4($sp)
+
+	lw $t0, blinkCounter($zero)
+	addi $t0, $t0, 1
+	lw $t1, intrPerBlink($zero)
+	bne $t0, $t1, next		#计数器满
+
+	jal cursorBlink
+	addu $t0, $zero, $zero	#计数器归零
+
+next:
+	sw $t0, blinkCounter($zero)
+
+Exit:
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $ra, 4($sp)
+	addi $sp, $sp, 6
+
+	jr $ra
+.end Start

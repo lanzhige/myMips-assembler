@@ -1,0 +1,44 @@
+########################### scroll_up ###########################
+########################### 上拉一行
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -6
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+
+	xor $t0, $t0, $t0
+	xor $t1, $t1, $t1
+	lui $t0, 1
+	lui $t1, 1
+	addi $t1, $t1, 580		#for (0-290) * 2 [i] =  [i + 10]
+
+up:
+	beq $t0, $t1, done
+	addi $t2, $t0, 20
+	lw $t2, 0($t2)
+	sw $t2, 0($t0)
+	addi $t0, $t0, 2
+	beq $zero, $zero, up
+
+done:
+	addi $t1, $t1, 20			#for 580-599 [i] =  0xff
+	addi $t2, $zero, -1			#0xffff, 空格
+
+empty:
+	beq $t0, $t1, Exit
+	sw $t2, 0($t0)
+	addi $t0, $t0, 2
+	beq $zero, $zero, empty
+
+Exit:
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	addi $sp, $sp, 6
+
+	jr $ra
+.end Start

@@ -1,0 +1,110 @@
+########################### 读取文件 ###########################
+########################### $a0 文件名字符串地址
+########################### $a1 打印到的地址
+########################### $v0 成功与否，1成功
+
+dirpos 		equ 	(4316)
+fatpos 		equ 	(5084)
+datasec 	equ 	(5468) 		#118
+buffer		equ		(5540)
+str_cmp 	equ		(1600)
+get_sector 	equ 	(1792)
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -24
+	sw $s0, 0($sp)
+	sw $s1, 2($sp)
+	sw $s2, 4($sp)
+	sw $t0, 6($sp)
+	sw $t1, 8($sp)
+	sw $t2, 10($sp)
+	sw $t3, 12($sp)
+	sw $t4, 14($sp)
+	sw $t5, 16($sp)
+	sw $t6, 18($sp)
+	sw $t7, 20($sp)
+	sw $ra, 22($sp)
+
+	add $s1, $zero, $a0 	#字符串的地址
+	add $s2, $zero, $a1 	#s2 = 要存放的地址
+	lw $t0, dirpos($zero)
+
+	addi $s0, $zero, 32 	#s0当前文件目录的偏移
+	addi $t5, $zero, 16
+	addi $t6, $zero, 0b4h
+	addi $t7, $zero, 0fbh
+
+everyfile:
+	add $t1, $zero, $s0 	#当前文件的32个字节
+	lh $t0, dirpos($s0)
+	beq $t0, $t6, nextfile 	#是b4, 已经删除的文件，直接跳到下一个
+	beq $t0, $zero, notfind	#是0，没找到
+
+	addi $a1, dirpos($s0)	#否则开始比较
+	jal str_cmp
+	beq $v0, $zero, found
+
+nextfile:
+	addi $s0, $s0, 32
+	bne $t0, $t5, everyfile
+	b notfind
+
+found:
+	addi $t6, $zero, -1
+	lh $t0, dirpos+27($s0)		#t0 = 第s0项开始在fat表中的偏移项数，即16位单位
+								#第27，28字节，转码没有转到
+	andi $t1, $t0, 0FFh
+	sll $t1, $t1, 8
+    andi $t0, $t0, 0FF00h
+    srl $t0, $t0, 8
+    add $t0, $t0, $t1   	#27, 28调换位置
+
+readsec:
+	lh $t1, fatpos($t0)			#下一个扇区
+	lw $t2, datasec($zero) 		#数据区起始区号
+	add $t2, $t0, $t2   		#要读的区号
+	addi $a1, $zero, buffer 	#写地址
+	jal get_sector
+
+	add $t0, $t0, $zero
+	addi $t2, $zero, 256
+
+printloop:
+	lh $t3, buffer($t0)
+	add $t4, $s2, $t0  	#要写进位置的总偏移值
+	sh $t3, 0($t4)
+	addi $t0, $t0, 1
+	bne $t0, $t2, printloop
+
+	beq $t1, $t6, exitRead	#下一个扇区是0xffff停止
+	add $t0, $zero, $t1 	#当前扇区 = 下一个扇区，循环
+	b readsec
+	sh $t7, 1($t4)  	#写一个0xfb进去
+
+notfind:
+	add $v0, $zero, $zero	#找不到
+	b Exit
+
+exitRead:
+	addi $v0, $zero, 1 		#找到了
+
+Exit:
+	lw $s0, 0($sp)
+	lw $s1, 2($sp)
+	lw $s2, 4($sp)
+	lw $t0, 6($sp)
+	lw $t1, 8($sp)
+	lw $t2, 10($sp)
+	lw $t3, 12($sp)
+	lw $t4, 14($sp)
+	lw $t5, 16($sp)
+	lw $t6, 18($sp)
+	lw $t7, 20($sp)
+	lw $ra, 22($sp)
+	addi $sp, $sp, 24
+
+	jr $ra
+.end Start

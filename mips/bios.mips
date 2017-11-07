@@ -1,0 +1,277 @@
+########################### BIOS引导程序 ###########################
+
+serialAddrH		equ		(3)		#串口输出地址高位
+serialRegH		equ		(256)	#串口寄存器第9根线高
+memAddr			equ		(4226)
+transfering		equ 	(4228)
+baddata			equ 	(4230)
+serialAddrLSR	equ		(3)		#4'b0011 = LSR
+serialAddrTHR	equ		(0)		#4'b0000 = THR
+serialAddrSIG	equ		(6)		#4'b0110 = SIG
+serialAddrREP	equ		(7)		#4'b0111 = REP
+serialAddrALP	equ		(9)		#4'b1001 = ALP
+serialAddrLCR	equ		(2)		#4'b0010 = LCR
+serialAddrDLH	equ		(4)		#4'b0100 = DLH
+serialAddrDLL	equ		(5)		#4'b0101 = DLL
+
+serial_intr 	equ		()
+Serial_init 	equ 	()
+Serial_send 	equ 	()
+Serial_recv 	equ		()
+
+.data
+
+.text
+Start:
+	#无需压栈，初始化
+
+	addi $t0, $zero, 0ffh
+wait:
+	addi $t0, $t0, -1
+	bne $t0, $zero, wait 	#等待板子初始化完成
+
+	#初始化串口
+	addi $a0, $zero, 63		#8'b0011_1111
+	addi $a1, $zero, 01458h	#波特率除数
+	jal Serial_init
+
+	ei $zero 		#打开中断。默认应该关闭
+
+parityfail:
+	#发送0x01查询初始化数据
+	addi $a0, $zero, 1
+	jal Serial_send
+
+	#查询初始化文件扇区数，系统起始地址
+	add $a0, $zero, $zero
+	addi $a1, $zero, 4
+	jal Serial_recv
+
+	bne $v0, $zero, parityfail 	#奇偶检验错，重发
+
+	lhu $t0, 0($zero)	#总的扇区数
+	lhu $t1, 2($zero)	#程序起始地址
+	add $t2, $zero, $zero 	#当前接收到扇区指针
+
+mainloop:
+	beq $t0, $t2, donemainloop
+
+parityfail1:
+	#发送0x02 + XY查询XY扇区的内容
+	addi $a0, $zero, 2
+	jal Serial_send
+
+	add $a0, $zero, $t2
+	srl $a0, $a0, 8
+	jal Serial_send
+	add $a0, $zero, $t2
+	jal Serial_send
+
+	#接收数据
+	sll $a0, $t2, 8		#内存起始地址
+	addi $a1, $zero, 512	#接收512*8位
+	jal Serial_recv
+
+	bne $v0, $zero, parityfail1 	#奇偶检验错，重发
+
+	addi $t2, $t2, 1
+	b mainloop
+
+donemainloop:
+
+	di $zero		#关闭中断
+
+########################################一大波新加指令
+
+	ci			#修改中断入口
+
+	mtb $t1 	#修改b寄存器为t1
+
+	mfbase $at 	#读取base值，默认使用at寄存器
+
+	load $ra, $zero		#baseWrite
+						#pc -> $ra
+						#j $zero
+						#intr enable
+
+.end Start
+
+######################################################
+
+Serial_send:
+	addi $sp, $sp, -6
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+
+	addu $t2, $a0, $zero
+	andi $t2, $t2, 0FFh
+
+	xor $t0, $t0, $t0
+	lui $t0, serialAddrH
+	addi $t0, $t0, serialRegH	#串口寄存器基址
+
+send_wait:							#判断是否发送完成
+	lw $t1, serialAddrLSR($t0)
+	andi $t1, $t1, 32
+	beq $t1, $zero, send_wait		#LSR[5] == 0，发送未完成，等待
+
+	sw $t2, serialAddrTHR($t0)	#写入待发送数据
+
+	lw $t2, serialAddrSIG($t0)	#取出原值
+	ori $t2, $t2, 1
+	sw $t2, serialAddrSIG($t0)	#发送信号拉高
+
+	andi $t2, $t2, -2			#0xffff_fffe
+	sw $zero, serialAddrSIG($t0)	#拉低发送信号
+
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	addi $sp, $sp, 6
+
+	jr $ra
+
+######################################################
+
+Serial_recv:
+	addi $sp, $sp, -6
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+
+	xor $t0, $t0, $t0
+	lui $t0, serialAddrH
+	addi $t0, $t0, serialRegH	#串口寄存器基址
+
+	lw $t1, serialAddrREP($t0)
+	srl $t2, $a1, 1
+	addi $t1, $t1, $t2
+	sw $t1, serialAddrALP($t0)		#更新中断指针，重置缓冲区
+
+	sw $a0, memAddr($zero)			#填入地址
+	addi $t0, $zero, 1
+	sw $t0, transfering($zero)		#拉高发送标志
+
+recv_loop:
+	lw $t0, transfering($zero)
+	bne $zero, $t0, recv_loop		#等待接收完成
+
+	lw $v0, baddata($zero)
+
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	addi $sp, $sp, 6
+
+	jr $ra
+
+######################################################
+
+Serial_init:
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+
+	xor $t0, $t0, $t0
+	lui $t0, serialAddrH
+	addi $t0, $t0, serialRegH	#串口寄存器基址
+
+	sw $a0, serialAddrLCR($t0)	#设置控制
+	sw $a1, serialAddrDLL($t0)
+	srl $t1, $a1, 8
+	sw $t1, serialAddrDLH($t0)	#设置波特率除数
+
+	sw $zero, serialAddrREP($t0)	#设置读指针，基本为0
+	sw $zero, serialAddrSIG($t0)	#设置信号为低
+
+	addi $t1, $zero, 200
+	sw $t1, serialAddrALP($t0)		#设置中断指针，尽量靠后，防止意外触发
+
+	sw $zero, memAddr($zero)		#设置内存中标志位
+	sw $zero, transfering($zero)
+	sw $zero, baddata($zero)
+
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	addi $sp, $sp, 4
+
+	jr $ra
+
+######################################################
+
+serial_intr:
+	addi $sp, $sp, -12
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+	sw $t3, 6($sp)
+	sw $t4, 8($sp)
+	sw $t5, 10($sp)
+
+	lw $t0, transfering($zero)
+	beq $t0, $zero, intrExit			#不在接收状态，退出
+
+	xor $t0, $t0, $t0
+	lui $t0, serialAddrH			#t0串口基地址
+	addi $t1, $t0, serialRegH		#t1串口寄存器基址
+
+	lw $t2, serialAddrLSR($t1)
+	andi $t2, $t2, 8				#LSR[3]校验错误
+	sw $t2, baddata($zero)
+
+	lw $t2, serialAddrREP($t1)
+	addu $t2, $t0, $t2
+	lw $t3, serialAddrALP($t1)
+	addu $t3, $t0, $t3
+	lw $t4, memAddr($zero)
+
+intrloop:
+	beq $t2, $t3, intrdone
+	lw $t5, 0($t2)
+	sw $t5, 0($t4)
+	addi $t4, $t4, 2
+	addi $t2, $t2, 2
+	b intrloop
+
+intrdone:
+	sw $zero, transfering($zero)
+
+	lw $t2, serialAddrSIG($t1)
+	ori $t2, $t2, 2
+	sw $t2, serialAddrSIG($t1)
+	andi $t2, $t2, -3
+	sw $t2, serialAddrSIG($t1)		#取走标志拉高拉低
+
+intrExit:
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	lw $t3, 6($sp)
+	lw $t4, 8($sp)
+	lw $t5, 10($sp)
+	addi $sp, $sp, 12
+
+	jr $ra
+
+######################################################
+
+intrHandler:
+	addi $sp, $sp, -6
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $ra, 4($sp)
+
+	mfcause $t0			##############读取cause，新加指令
+
+	andi $t1, $t0, 16	#串口中断
+	beq $t1, $zero, ignore
+	jal serial_intr
+
+ignore:
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $ra, 4($sp)
+	addi $sp, $sp, 6
+
+	eret			############中断返回，新加指令

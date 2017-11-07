@@ -1,0 +1,95 @@
+Cursor			equ		(0ffh)  #保存的值为是第几个字符
+scroll_up		equ		(000000)
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -14
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+	sw $t3, 6($sp)
+	sw $t4, 8($sp)
+	sw $t5, 10($sp)
+	sw $ra, 12($sp)
+
+	addu $t0, $zero, $a0	#t0输出的字符
+	andi $t0, $t0, 0ffh
+
+	addi $t5, $zero, 1199	#t5全屏最后一个字符
+
+	addi $t1, $zero, 0fbh
+	beq $t0, $t1, Exit		#空字符不输出
+	addi $t1, $zero, 0fdh
+	beq $t0, $t1, backspace	#退格符
+	addi $t1, $zero, 0feh
+	beq $t0, $t1, enter		#回车
+
+	lhu $t1, Cursor($zero)	#计算光标地址
+	bne $t1, $t5, show		#未打满
+
+	jal scroll_up 				#上移一行，光标减40
+	addi $t1, $t1, -40		#原来屏幕的最后一个位置可能会留下光标，不再处理
+
+show:
+	addi $t2, $t1, 1
+	sh $t2, Cursor($zero)
+
+save:
+	srl $t2, $t1, 1			#t2 = t1 / 2，内存中的单元
+	lui $t2, 1				#t2 = t2 + 010000h
+	andi $t1, $t1, 1		#t1 = t1 % 2
+	lhu $t3, 0($t2)
+
+	addi $t4, $zero, 0ff00h
+	lui $t4, 0
+	bne $t1, $zero, high	#内存高位
+	sll $t0, $t0, 8
+	srl $t4, $t4, 8
+
+high:
+	and $t3, $t3, $t4
+	or $t3, $t0, $t3
+	sh $t3, 0($t2)
+	beq $zero, $zero, Exit
+
+backspace:
+	lhu $t1, Cursor($zero)	#光标回移一格
+	addi $t2, $t1, -1
+	sh $t2, Cursor($zero)
+
+	addi $t0, $zero, 0ffh 	#光标原来位置写入空格
+	beq $zero, $zero, save
+
+enter:
+	lhu $t1, Cursor($zero)
+	addi $t0, $zero, 579
+	slt $t2, $t0, $t1		#光标是否处于最后一行
+	bne $t2, $zero, lastline
+
+	addi $t2, $t1, 40		#不是最后一行，光标加40
+	sh $t2, Cursor($zero)
+
+	addi $t0, $zero, 0ffh 	#光标原来位置写入空格
+	beq $zero, $zero, save
+
+lastline:
+	jal scroll_up 				#上移一行，光标不动
+
+	addi $t1, $t1, -40 		##光标原来位置上一行写入空格
+	addi $t0, $zero, 0ffh
+	beq $zero, $zero, save
+
+Exit:
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	lw $t3, 6($sp)
+	lw $t4, 8($sp)
+	lw $t5, 10($sp)
+	lw $ra, 12($sp)
+	addi $sp, $sp, 14
+
+	jr $ra
+.end Start

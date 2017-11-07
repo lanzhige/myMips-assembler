@@ -1,0 +1,47 @@
+########################### 串口发送 ###########################
+########################### $a0 低8位发送数据
+
+serialAddrH		equ		(3)		#串口输出地址高位
+serialRegH		equ		(256)	#串口寄存器第9根线高
+serialAddrLSR	equ		(3)		#4'b0011 = LSR
+serialAddrTHR	equ		(0)		#4'b0000 = THR
+serialAddrSIG	equ		(6)		#4'b0110 = SIG
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -6
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+
+	addu $t2, $a0, $zero
+	andi $t2, $t2, 0FFh
+
+	xor $t0, $t0, $t0
+	lui $t0, serialAddrH
+	addi $t0, $t0, serialRegH	#串口寄存器基址
+
+wait:							#判断是否发送完成
+	lw $t1, serialAddrLSR($t0)
+	andi $t1, $t1, 020h
+	beq $t1, $zero, wait		#LSR[5] == 0，发送未完成，等待
+
+	sw $t2, serialAddrTHR($t0)	#写入待发送数据
+
+	lw $t2, serialAddrSIG($t0)	#取出原值
+	ori $t2, $t2, 1
+	sw $t2, serialAddrSIG($t0)	#发送信号拉高
+
+	andi $t2, $t2, -2			#0xffff_fffe
+	sw $zero, serialAddrSIG($t0)	#拉低发送信号
+
+Exit:
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	addi $sp, $sp, 6
+
+	jr $ra
+.end Start

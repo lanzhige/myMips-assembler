@@ -1,0 +1,53 @@
+####################################################################
+########################### 中断分支处理 ###########################
+####################################################################
+
+keyboard_intr		equ		(192)
+timer_intr			equ		(512)
+overflow_intr		equ		(160)
+syscall_intr		equ		(32)
+serial_intr			equ		(544)
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -6
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $ra, 4($sp)
+
+	mfcause $t0			#读取cause
+
+	andi $t1, $t0, 4	#键盘中断
+	beq $t1, $zero, next1
+	jal keyboard_intr
+
+next1:
+	andi $t1, $t0, 16	#串口中断
+	beq $t1, $zero, next2
+	jal serial_intr
+
+next2:
+	andi $t1, $t0, 8	#时钟中断
+	beq $t1, $zero, next3
+	jal timer_intr
+
+next3:
+	andi $t1, $t0, 1	#溢出中断
+	beq $t1, $zero, next4
+	jal overflow_intr
+
+next4:
+	andi $t1, $t0, 2	#syscall
+	beq $t1, $zero, next5
+	jal syscall_intr
+
+next5:
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $ra, 4($sp)
+	addi $sp, $sp, 6
+
+	eret			#中断返回
+.end Start

@@ -1,0 +1,95 @@
+#daf
+.text
+ UIOY equ $s2
+start:	addi $a1, $a1, 1+1
+	addiu  $a1, $a1, 2+2
+	andi $a1, $a1, 1+2
+	beq $a1, $a1, start
+	bne  $a1, $a1, start
+second:
+	bgez $a1, second
+	bgtz $a1, second #fdsjfk#kk
+	blez $a1, second
+	bltz $a1, second
+	bgezal $a1, second #dfa
+	bltzal $a1, second
+third:
+	lh $a1,third($a0)
+	lhu $a1,third($a0)
+	lw $a1,third($a0)
+	sw $a1,3+5($a0)
+	sh $a1,third($a0)
+	lui $a1, 5+5*6
+	ori $a1, $a1, 5+5*6
+	slti $a1, $a1, 5+5*6
+	sltiu $a1, $a1, 5+5*6
+	xori $a1, $a1, 5+5*6
+	j third
+	jal third
+	add		 UIOY, UIOY, UIOY
+	addu		 UIOY, UIOY, UIOY
+	and		 UIOY, UIOY, UIOY
+	div		 UIOY, UIOY
+	divu		 UIOY, UIOY
+	jalr		 UIOY, UIOY
+	jr		 UIOY
+	mfhi		 UIOY
+	mflo		 UIOY
+	mult		 UIOY, UIOY
+	multu		 UIOY, UIOY
+	nor		 UIOY, UIOY, UIOY
+	or		 UIOY, UIOY, UIOY
+	sll		 UIOY, UIOY,66<<3
+	sllv		 UIOY, UIOY, UIOY
+	slt		 UIOY, UIOY, UIOY
+	sltu		 UIOY, UIOY, UIOY
+	sra		 UIOY, UIOY,66>>>2
+
+	high:srav		 UIOY, UIOY, UIOY
+	srl		 UIOY, UIOY,66<<3
+	subu   UIOY, UIOY, UIOY
+	xor    UIOY, UIOY, UIOY
+	abs    UIOY, UIOY
+	b    high
+	beqz   UIOY,high
+	bge    UIOY, UIOY,high
+	bgeu   UIOY, UIOY,high
+	bgt    UIOY, UIOY,high
+	bgtu   UIOY, UIOY,high
+	ble    UIOY, UIOY,high
+	bleu   UIOY, UIOY,high
+	blt    UIOY, UIOY,high
+	bltu   UIOY, UIOY,high
+	bnez   UIOY,high
+	la    UIOY,19/(3+5)( UIOY)
+	li     UIOY,19/(3+5)
+	move		 UIOY, UIOY
+	neg		 UIOY, UIOY
+	negu		 UIOY, UIOY
+	nop
+	not		 UIOY, UIOY
+	rol		 UIOY, UIOY, UIOY
+	ror		 UIOY, UIOY, UIOY
+
+	sge	 UIOY, UIOY, UIOY
+	sge	 UIOY, UIOY, UIOY
+	sgt	 UIOY, UIOY, UIOY
+	sgtu	 UIOY, UIOY, UIOY
+	sle	 UIOY, UIOY, UIOY
+	sleu	 UIOY, UIOY, UIOY
+	sne	 UIOY, UIOY, UIOY
+	seq	 UIOY, UIOY, UIOY
+
+beq $t3,$t2,2
+beq $t1,$t2,2
+
+
+	.end start
+	#fdas
+	.data
+	oo: .asciiz 'dsfadf'
+.formend
+	aa: .1byte 1,2,4,8
+       .formend
+qq:.2byte 444
+.formend

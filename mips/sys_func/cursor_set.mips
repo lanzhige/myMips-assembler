@@ -1,0 +1,39 @@
+########################### cursor_set ###########################
+########################### $a0 设置的新位置
+
+Cursor			equ		(4096)  #保存的值为是第几个字符
+put_char_AT		equ		(992)
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -10
+	sw $t0, 0($sp)
+	sw $a0, 2($sp)
+	sw $a1, 4($sp)
+	sw $a3, 6($sp)
+	sw $ra, 8($sp)
+
+	addi $t0, $zero, 1200
+	sltu $t0, $a0, $t0
+	beq $t0, $zero, Exit	#设置超过边界
+
+	lw $t0, Cursor($zero)	#取出原地址
+	sw $a0, Cursor($zero)	#设置新地址
+
+	addu $a1, $t0, $zero	#a1原地址
+	addi $a0, $zero, 0ffh 	#写入空格
+	addi $a3, $zero, $zero	#a3 = 0直接地址
+	jal put_char_AT
+
+Exit:
+	lw $t0, 0($sp)
+	lw $a0, 2($sp)
+	lw $a1, 4($sp)
+	lw $a3, 6($sp)
+	lw $ra, 8($sp)
+	addi $sp, $sp, 10
+
+	jr $ra
+.end Start

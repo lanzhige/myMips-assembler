@@ -1,0 +1,62 @@
+########################### read_string ###########################
+########################### $a0 读入字符串保存地址
+########################### $a1 最长长度
+########################### $v0 实际读入长度
+########################### 字符串添加0xfb结束符，以回车为结束符
+
+readchar 		equ		(960)
+putchar 		equ		(864)
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -12
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $s0, 4($sp)
+	sw $s1, 6($sp)
+	sw $s2, 8($sp)
+	sw $ra, 10($sp)
+
+	xor $t0, $t0, $t0		#计数器
+	addu $t1, $zero, $a0	#指针
+	addi $s0, $zero, 0fbh	#结束符
+	addi $s1, $zero, 0fdh	#退格
+	addi $s2, $zero, 0feh	#回车
+
+loop:
+	beq $t0, $a1, Exit		#计数器满
+
+	jal readchar 			#读取字符
+	beq $zero, $v1, loop 	#未读到字符，continue
+
+	add $a0, $v0, $zero
+	jal putchar				#打印出来
+	beq $s2, $v0, Exit		#遇回车
+	bne $s1, $v0, notBacksapce	#非退格符跳转
+
+	addi $t0, $t0, -1 		#计数器减1
+	addi $t1, $t1, -1 		#指针减1
+	beq $zero, $zero, loop
+
+notBacksapce:
+	sh $v0, 0($t1)
+	addi $t0, $t0, 1		#计数器加1
+	addi $t1, $t1, 1 		#指针加1
+	beq $zero, $zero, loop
+
+Exit:
+	sh $s0, 0($t1) 			#写入fb结束符
+	addu $v0, $zero, $t0
+
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $s0, 4($sp)
+	lw $s1, 6($sp)
+	lw $s2, 8($sp)
+	lw $ra, 10($sp)
+	addi $sp, $sp, 12
+
+	jr $ra
+.end Start

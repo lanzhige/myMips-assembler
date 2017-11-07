@@ -1,0 +1,69 @@
+########################### putcharAT ###########################
+########################### $a0 输出字符编码
+########################### $a1 输出x坐标 或者 直接位置
+########################### $a2 输出y坐标
+########################### $a3 1:前面是xy组合，0:a1有效直接是位置，a2无效
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -10
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+	sw $t3, 6($sp)
+	sw $t4, 8($sp)
+
+	addu $t0, $zero, $a0	#t0输出的字符
+	andi $t0, $t0, 0ffh
+
+	bne $a3, $zero, xymode 	#1为xy组合的模式
+
+	addu $t1, $a1, $zero	#直接位置，判断边界
+	slti $t2, $t1, 1200
+	beq $t2, $zero, Exit
+	b save
+
+xymode:
+	andi $t1, $a1, 0ffh 	#横坐标，防止负数补码
+	slti $t3, $t1, 40
+	beq $t3, $zero, Exit	#横坐标越界
+
+	andi $t2, $a2, 0ffh 	#纵坐标，防止负数补码
+	slti $t3, $t2, 30
+	beq $t3, $zero, Exit	#纵坐标越界
+
+	addi $t3, $zero, 40
+	mul $t3, $t2
+	mflo $t3 				#y * 40，结果不会超过lo的上限
+
+	addi $t1, $t1, t3		#全屏第几个字符
+
+save:
+	srl $t2, $t1, 1			#t2 = t1 / 2，内存中的单元
+	lui $t2, 1				#t2 = t2 + 0x10000
+	andi $t1, $t1, 1		#t1 = t1 % 2
+	lhu $t3, 0($t2)
+
+	addi $t4, $zero, 0ff00h
+	lui $t4, 0
+	bne $t1, $zero, high	#内存高位
+	sll $t0, $t0, 8
+	srl $t4, $t4, 8
+
+high:
+	and $t3, $t3, t4
+	or $t3, $t0, $t3
+	sh $t3, 0($t2)
+
+Exit:
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	lw $t3, 6($sp)
+	lw $t4, 8($sp)
+	addi $sp, $sp, 10
+
+	jr $ra
+.end Start

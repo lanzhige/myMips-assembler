@@ -1,0 +1,49 @@
+########################### 串口接收 ###########################
+########################### $a0 接收到地址
+########################### $a1 接收长度，8bits单位，偶数
+########################### $v0 数据错误
+
+memAddr			equ		(4226)
+transfering		equ 	(4228)
+baddata			equ 	(4230)
+serialAddrH		equ		(3)		#串口输出地址高位
+serialRegH		equ		(256)	#串口寄存器第10根线高
+serialAddrREP	equ		(7)		#4'b0111 = REP
+serialAddrALP	equ		(9)		#4'b1001 = ALP
+
+.data
+
+.text
+Start:
+	addi $sp, $sp, -6
+	sw $t0, 0($sp)
+	sw $t1, 2($sp)
+	sw $t2, 4($sp)
+
+	xor $t0, $t0, $t0
+	lui $t0, serialAddrH
+	addi $t0, $t0, serialRegH	#串口寄存器基址
+
+	lw $t1, serialAddrREP($t0)
+	srl $t2, $a1, 1
+	addi $t1, $t1, $t2
+	sw $t1, serialAddrALP($t0)		#更新中断指针，重置缓冲区
+
+	sw $a0, memAddr($zero)			#填入地址
+	addi $t0, $zero, 1
+	sw $t0, transfering($zero)		#拉高发送标志
+
+loop:
+	lw $t0, transfering($zero)
+	bne $zero, $t0, loop		#等待接收完成
+
+	lw $v0, baddata($zero)
+
+Exit:
+	lw $t0, 0($sp)
+	lw $t1, 2($sp)
+	lw $t2, 4($sp)
+	addi $sp, $sp, 6
+
+	jr $ra
+.end Start
