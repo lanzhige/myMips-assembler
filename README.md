@@ -11,4 +11,4 @@ The codes are tested and generated in VS2013 windows x64 environment.
 Test inputs are stored in the ./test/ directory
 Assembly codes are stored in the ./mips/ directory
 
-Author: Lei Zhang
+Author: Lei Zhang in 2014
